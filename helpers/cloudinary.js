@@ -16,9 +16,20 @@ async function uploadToCollection(imagePath, collectionName) {
     return result;
   } catch (error) {
     console.error("Upload failed:", error);
+    throw new Error("Upload to cloudinary storage failed");
   }
 }
 
-module.exports = { uploadToCollection };
+async function deleteFromCloudinary(publicId) {
+  try {
+    const result = await cloudinary.uploader.destroy(publicId);
+    return result;
+  } catch (error) {
+    console.error("Upload failed:", error);
+    throw new Error("Deleting from cloudinary storage failed");
+  }
+}
+
+module.exports = { uploadToCollection, deleteFromCloudinary };
 // Usage example
 // uploadToCollection("./images/my_image.jpg", "EcoNova_cabins");

@@ -1,5 +1,8 @@
 const Cabin = require("../models/Cabin");
-const { uploadToCollection } = require("../helpers/cloudinary");
+const {
+  uploadToCollection,
+  deleteFromCloudinary,
+} = require("../helpers/cloudinary");
 
 async function getAllCabins(req, res) {
   try {
@@ -13,7 +16,7 @@ async function getAllCabins(req, res) {
     else
       return res.status(400).json({
         success: false,
-        message: "No booking in the database.",
+        message: "No Cabin in the database.",
       });
   } catch (error) {
     res.status(500).json({
@@ -58,6 +61,12 @@ async function addCabin(req, res) {
     const cabinImages = req.files;
     let cabinPictures = [];
 
+    //test
+    name = "001";
+    price = 432.2;
+    discount = 15;
+    maxOccupants = 6;
+
     // add all pictures to cloudinary if they exist
     if (cabinImages.length > 0) {
       for (i = 0; i < cabinImages.length; i++) {
@@ -98,8 +107,15 @@ async function addCabin(req, res) {
 async function deleteCabin(req, res) {
   try {
     const { cabinId } = req.params;
-    const deletedCabin = await Cabin.findByIdAndDelete(cabinId);
+    const cabin = await Cabin.findById(cabinId);
 
+    //delete all cabin pictures from cloudinary
+    for (i = 0; i < cabin.cabinPictures.length; i++) {
+      await deleteFromCloudinary(cabin.cabinPictures[i].publicId);
+    }
+
+    // delete cabin from database
+    const deletedCabin = await Cabin.findByIdAndDelete(cabinId);
     if (deletedCabin)
       return res.status(200).json({
         success: true,
@@ -113,6 +129,7 @@ async function deleteCabin(req, res) {
     });
   }
 }
+
 async function updateCabin() {
   try {
   } catch (error) {

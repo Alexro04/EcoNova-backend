@@ -1,4 +1,7 @@
 const express = require("express");
+const upload = require("../middlewares/multer");
+const authMiddleware = require("../middlewares/auth-middleware");
+const adminMiddleware = require("../middlewares/admin-middleware");
 const {
   addCabin,
   getAllCabins,
@@ -6,14 +9,18 @@ const {
   deleteCabin,
   updateCabin,
 } = require("../controllers/cabins-controller");
-const upload = require("../middlewares/multer");
 
 const router = express.Router();
 
 // routes
-router.post("/upload", upload.array("cabin-images", 10), addCabin);
-router.get("/all-cabins", getAllCabins);
-router.get("/cabin/:cabinId", getCabin);
+router.post(
+  "/upload",
+  authMiddleware,
+  upload.array("cabin-images", 10),
+  addCabin
+);
+router.get("/all-cabins", authMiddleware, getAllCabins);
+router.get("/cabin/:cabinId", authMiddleware, getCabin);
 router.delete("/delete/:cabinId", deleteCabin);
 router.post("/update/:cabinId", upload.array("cabin-images"), updateCabin);
 
