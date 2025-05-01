@@ -4,6 +4,7 @@ const connectToDatabase = require("./db/db");
 
 const cabinRoutes = require("./routes/cabins-routes");
 const userRoutes = require("./routes/users-routes");
+const bookingRoutes = require("./routes/booking-routes");
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 // routes
 app.use("/econova/api/cabins/", cabinRoutes);
 app.use("/econova/api/users/", userRoutes);
+app.use("/econova/api/bookings/", bookingRoutes);
 
 PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
