@@ -13,15 +13,10 @@ const {
 const router = express.Router();
 
 // routes
-router.post(
-  "/upload",
-  authMiddleware,
-  upload.array("cabin-images", 10),
-  addCabin
-);
-router.get("/all-cabins", authMiddleware, getAllCabins);
-router.get("/cabin/:cabinId", authMiddleware, getCabin);
+router.post("/upload", upload.array("cabinImages", 10), addCabin);
+router.get("/all-cabins", getAllCabins);
+router.get("/cabin/:cabinId", getCabin);
 router.delete("/delete/:cabinId", deleteCabin);
-router.post("/update/:cabinId", upload.array("cabin-images"), updateCabin);
+router.post("/update/:cabinId", upload.array("cabinImages"), updateCabin);
 
 module.exports = router;

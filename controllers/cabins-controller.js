@@ -57,15 +57,10 @@ async function getCabin(req, res) {
 
 async function addCabin(req, res) {
   try {
-    let { name, price, discount, maxOccupants } = req.body;
+    console.log(req.body);
+    const { name, price, discount, capacity, description } = req.body;
     const cabinImages = req.files;
     let cabinPictures = [];
-
-    //test
-    name = "001";
-    price = 432.2;
-    discount = 15;
-    maxOccupants = 6;
 
     // add all pictures to cloudinary if they exist
     if (cabinImages.length > 0) {
@@ -86,7 +81,8 @@ async function addCabin(req, res) {
     const newCabin = await Cabin.create({
       name,
       price,
-      maxOccupants,
+      capacity,
+      description,
       discount,
       cabinPictures,
     });

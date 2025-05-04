@@ -1,12 +1,19 @@
 require("dotenv").config();
 const express = require("express");
 const connectToDatabase = require("./db/db");
+const cors = require("cors");
 
 const cabinRoutes = require("./routes/cabins-routes");
 const userRoutes = require("./routes/users-routes");
 const bookingRoutes = require("./routes/booking-routes");
 
 const app = express();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  })
+);
 
 //connect to database
 connectToDatabase();

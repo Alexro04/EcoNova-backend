@@ -5,7 +5,8 @@ const CabinSchema = new mongoose.Schema(
     name: { type: String, required: true },
     price: { type: Number, required: true },
     discount: { type: Number },
-    maxOccupants: { type: Number, required: true },
+    capacity: { type: Number, required: true },
+    description: { type: String, required: true },
     cabinPictures: { type: Array, required: true },
   },
   { timestamps: true }
