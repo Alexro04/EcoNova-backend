@@ -30,6 +30,38 @@ async function deleteFromCloudinary(publicId) {
   }
 }
 
-module.exports = { uploadToCollection, deleteFromCloudinary };
+async function addImagesToCloudinary(imageArray) {
+  let pictures = [];
+
+  if (imageArray.length > 0) {
+    for (i = 0; i < imageArray.length; i++) {
+      const result = await uploadToCollection(
+        imageArray[i].path,
+        "EcoNova_cabins"
+      );
+      pictures.push({
+        url: result.secure_url,
+        publicId: result.public_id,
+      });
+    }
+  } else throw new Error("Image Array is empty");
+
+  return pictures;
+}
+
+async function deleteImagesFromCloudinary(imageArray) {
+  if (imageArray.length > 0) {
+    for (i = 0; i < imageArray.length; i++) {
+      await deleteFromCloudinary(imageArray[i].publicId);
+    }
+  } else throw new Error("Image Array is empty");
+}
+
+module.exports = {
+  uploadToCollection,
+  deleteFromCloudinary,
+  addImagesToCloudinary,
+  deleteImagesFromCloudinary,
+};
 // Usage example
 // uploadToCollection("./images/my_image.jpg", "EcoNova_cabins");

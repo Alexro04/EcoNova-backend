@@ -1,7 +1,7 @@
 const Cabin = require("../models/Cabin");
 const {
-  uploadToCollection,
-  deleteFromCloudinary,
+  deleteImagesFromCloudinary,
+  addImagesToCloudinary,
 } = require("../helpers/cloudinary");
 
 async function getAllCabins(req, res) {
@@ -57,25 +57,11 @@ async function getCabin(req, res) {
 
 async function addCabin(req, res) {
   try {
-    console.log(req.body);
     const { name, price, discount, capacity, description } = req.body;
     const cabinImages = req.files;
-    let cabinPictures = [];
 
     // add all pictures to cloudinary if they exist
-    if (cabinImages.length > 0) {
-      for (i = 0; i < cabinImages.length; i++) {
-        const result = await uploadToCollection(
-          cabinImages[i].path,
-          "EcoNova_cabins"
-        );
-        cabinPictures.push({
-          url: result.secure_url,
-          publicId: result.public_id,
-        });
-      }
-    } else
-      throw new Error("You need at least one cabin image to upload a cabin");
+    const cabinPictures = await addImagesToCloudinary(cabinImages);
 
     // create new cabin
     const newCabin = await Cabin.create({
@@ -106,9 +92,7 @@ async function deleteCabin(req, res) {
     const cabin = await Cabin.findById(cabinId);
 
     //delete all cabin pictures from cloudinary
-    for (i = 0; i < cabin.cabinPictures.length; i++) {
-      await deleteFromCloudinary(cabin.cabinPictures[i].publicId);
-    }
+    await deleteImagesFromCloudinary(cabin.cabinPictures);
 
     // delete cabin from database
     const deletedCabin = await Cabin.findByIdAndDelete(cabinId);
@@ -126,8 +110,41 @@ async function deleteCabin(req, res) {
   }
 }
 
-async function updateCabin() {
+async function updateCabin(req, res) {
   try {
+    const { cabinId } = req.params;
+    const { name, price, discount, capacity, description } = req.body;
+    const cabinImages = req.files;
+
+    //check if cabin exists
+    const cabin = await Cabin.findById(cabinId);
+    if (!cabin)
+      return res.status(400).json({
+        success: false,
+        message: `Cabin with the id-${cabinId} does not exist.`,
+      });
+
+    // if cabin exists, update the values
+    if (req.body) {
+      cabin.name = name;
+      cabin.price = price;
+      cabin.discount = discount;
+      cabin.capacity = capacity;
+      cabin.description = description;
+    }
+
+    // if files exists, overwrite the current one
+    if (cabinImages?.length > 0) {
+      await deleteImagesFromCloudinary(cabin.cabinPictures);
+      const newImages = await addImagesToCloudinary(cabinImages);
+      cabin.cabinPictures = newImages;
+    }
+
+    await cabin.save();
+    res.status(200).json({
+      success: true,
+      message: `Cabin with id-${cabinId} updated successfully`,
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
