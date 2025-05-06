@@ -75,7 +75,7 @@ async function deleteBooking(req, res) {
   try {
     const { bookingId } = req.params;
     const deletedBooking = await Booking.findByIdAndDelete(bookingId);
-    if (deleteBooking)
+    if (deletedBooking)
       return res.status(200).json({
         success: true,
         message: "No booking with that Id was found in the database.",
