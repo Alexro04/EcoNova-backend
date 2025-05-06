@@ -58,10 +58,37 @@ async function deleteImagesFromCloudinary(imageArray) {
 }
 
 module.exports = {
-  uploadToCollection,
-  deleteFromCloudinary,
   addImagesToCloudinary,
   deleteImagesFromCloudinary,
+  duplicateImageInCloudinary,
 };
-// Usage example
-// uploadToCollection("./images/my_image.jpg", "EcoNova_cabins");
+
+async function duplicateImage(originalUrl, newPublicId) {
+  try {
+    const result = await cloudinary.uploader.upload(originalUrl, {
+      public_id: newPublicId,
+    });
+    return result;
+  } catch (error) {
+    console.error("Error duplicating image:", error);
+    throw error;
+  }
+}
+
+async function duplicateImageInCloudinary(imagesArray) {
+  let pictures = [];
+  console.log(imagesArray[0].url, imagesArray[0].publicId);
+  if (imagesArray.length > 0) {
+    for (i = 0; i < imagesArray.length; i++) {
+      const result = await duplicateImage(
+        imagesArray[i].url,
+        `${imagesArray[i].publicId}-duplicate`
+      );
+      pictures.push({
+        url: result.secure_url,
+        publicId: result.public_id,
+      });
+    }
+    return pictures;
+  } else throw new Error("Image Array is empty");
+}

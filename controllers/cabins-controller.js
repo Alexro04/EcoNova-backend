@@ -2,6 +2,7 @@ const Cabin = require("../models/Cabin");
 const {
   deleteImagesFromCloudinary,
   addImagesToCloudinary,
+  duplicateImageInCloudinary,
 } = require("../helpers/cloudinary");
 
 async function getAllCabins(req, res) {
@@ -59,9 +60,15 @@ async function addCabin(req, res) {
   try {
     const { name, price, discount, capacity, description } = req.body;
     const cabinImages = req.files;
+    let cabinPictures;
 
+    //for duplicating cabins, check if the body already contains cabinPictures
+    if (req.body.cabinPictures)
+      cabinPictures = await duplicateImageInCloudinary(
+        JSON.parse(req.body.cabinPictures)
+      );
     // add all pictures to cloudinary if they exist
-    const cabinPictures = await addImagesToCloudinary(cabinImages);
+    else cabinPictures = await addImagesToCloudinary(cabinImages);
 
     // create new cabin
     const newCabin = await Cabin.create({
