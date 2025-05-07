@@ -2,14 +2,14 @@ const Settings = require("../models/Settings");
 
 async function getSettings(req, res) {
   try {
-    const settings = await Settings.find().at(0);
+    const settings = await Settings.findOne();
     if (settings)
       return res.status(200).json({
         success: true,
         message: "Settings loaded successfully",
         data: settings,
       });
-    else throw new Error("Setting could noy be loaded");
+    else throw new Error("Setting could not be loaded");
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -53,23 +53,28 @@ async function createSettings(req, res) {
 async function updateSettings(req, res) {
   try {
     const settings = await Settings.findOne();
+    const {
+      minNightsPerBooking = null,
+      maxNightsPerBooking = null,
+      bookingWindow = null,
+      bookingLimit = null,
+      breakfastPrice = null,
+    } = req.body;
     if (!settings)
       return res.status(400).json({
         success: false,
         message: "No setting is stored in the database",
       });
 
-    if (req.body.minNightsPerBooking)
-      settings.minNightsPerBooking = minNightsPerBooking;
-    if (req.body.maxNightsPerBooking)
-      settings.maxNightsPerBooking = maxNightsPerBooking;
-    if (req.body.bookingWindow) settings.bookingWindow = bookingWindow;
-    if (req.body.bookingLimit) settings.bookingLimit = bookingLimit;
-    if (req.body.breakfastPrice) settings.breakfastPrice = breakfastPrice;
+    if (minNightsPerBooking) settings.minNightsPerBooking = minNightsPerBooking;
+    if (maxNightsPerBooking) settings.maxNightsPerBooking = maxNightsPerBooking;
+    if (bookingWindow) settings.bookingWindow = bookingWindow;
+    if (bookingLimit) settings.bookingLimit = bookingLimit;
+    if (breakfastPrice) settings.breakfastPrice = breakfastPrice;
 
     await settings.save();
     return res.status(200).json({
-      success: false,
+      success: true,
       message: "Settings updated successfully",
     });
   } catch (error) {
