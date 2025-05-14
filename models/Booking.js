@@ -5,9 +5,9 @@ const BookingScheme = new mongoose.Schema(
     checkInDate: { type: Date, required: true },
     checkOutDate: { type: Date, required: true },
     bookingCost: { type: Number, required: true },
-    status: { type: String },
+    status: { type: String, required: true },
     extraCosts: { type: Number },
-    numberOfOccupants: { type: Number, required: true },
+    numGuests: { type: Number, required: true },
     guestId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",

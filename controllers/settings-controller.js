@@ -28,7 +28,7 @@ async function createSettings(req, res) {
   if (existingSetting.length > 0)
     return res.status(400).json({
       success: false,
-      message: "There can only be one enty in this field",
+      message: "There can only be one entry in this field",
     });
 
   try {

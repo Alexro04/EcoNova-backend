@@ -4,22 +4,24 @@ async function createBooking(req, res) {
   const {
     checkInDate,
     checkOutDate,
-    numberOfOccupants,
+    numGuests,
     bookingCost,
     extraCost,
     guestId,
     cabinId,
+    status,
   } = req.body;
 
   try {
     const newBooking = Booking.create({
       checkInDate,
       checkOutDate,
-      numberOfOccupants,
+      numGuests,
       bookingCost,
       extraCost,
       guestId,
       cabinId,
+      status,
     });
 
     if (newBooking)
@@ -32,9 +34,26 @@ async function createBooking(req, res) {
   }
 }
 
-async function getAllBookings(req, res) {
+async function getBookings(req, res) {
+  // filtering by status
+  const status = req.query.status;
+
+  //sorting
+  const sortBy = req.query.sortBy || "bookingCost";
+  const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+  const sortObj = {};
+  sortObj[sortBy] = sortOrder;
+  console.log(sortObj);
+
   try {
-    const bookings = await Booking.find();
+    const bookings = await Booking.find(status === "all" ? {} : { status })
+      .populate({
+        path: "guestId",
+        select: "fullname email",
+      })
+      .populate({ path: "cabinId", select: "name" })
+      .sort(sortObj);
+
     if (bookings.length > 0)
       return res.status(200).json({
         success: true,
@@ -94,7 +113,7 @@ async function updateBooking(req, res) {}
 
 module.exports = {
   createBooking,
-  getAllBookings,
+  getBookings,
   getBooking,
   deleteBooking,
   updateBooking,
