@@ -43,27 +43,35 @@ async function getBookings(req, res) {
   const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
   const sortObj = {};
   sortObj[sortBy] = sortOrder;
-  console.log(sortObj);
+
+  //pagination
+  const page = req.query.page || 1;
+  const limit = req.query.limit || 1;
+  const skip = (page - 1) * limit;
 
   try {
-    const bookings = await Booking.find(status === "all" ? {} : { status })
+    const bookings = await Booking.find(status ? { status } : {})
       .populate({
         path: "guestId",
         select: "fullname email",
       })
       .populate({ path: "cabinId", select: "name" })
-      .sort(sortObj);
+      .sort(sortObj)
+      .limit(limit)
+      .skip(skip);
 
     if (bookings.length > 0)
       return res.status(200).json({
         success: true,
         message: "All bookings retrived successfully",
         data: bookings,
+        count: bookings.length,
       });
     else
-      return res.status(400).json({
+      return res.status(204).json({
         success: true,
-        message: "No Cabin has been booked yet.",
+        message: "No data",
+        data: [],
       });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -73,7 +81,7 @@ async function getBookings(req, res) {
 async function getBooking(req, res) {
   try {
     const { bookingId } = req.params;
-    const booking = await Booking.findOne(bookingId);
+    const booking = await Booking.findById(bookingId);
     if (booking)
       return res.status(200).json({
         success: true,
@@ -81,9 +89,10 @@ async function getBooking(req, res) {
         data: booking,
       });
     else
-      return res.status(400).json({
+      return res.status(204).json({
         success: true,
         message: "No booking with that Id was found in the database.",
+        data: [],
       });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -97,11 +106,11 @@ async function deleteBooking(req, res) {
     if (deletedBooking)
       return res.status(200).json({
         success: true,
-        message: "No booking with that Id was found in the database.",
+        message: "Booking deleted successfully",
       });
     else
       return res.status(400).json({
-        success: true,
+        success: false,
         message: "No ",
       });
   } catch (error) {
@@ -109,7 +118,48 @@ async function deleteBooking(req, res) {
   }
 }
 
-async function updateBooking(req, res) {}
+async function updateBooking(req, res) {
+  try {
+    const { bookingId } = req.params;
+    const {
+      checkInDate,
+      checkOutDate,
+      numGuests,
+      bookingCost,
+      extraCosts,
+      status,
+      hasPaid,
+    } = req.body;
+
+    //check if cabin exists
+    const booking = await Booking.findById(bookingId);
+    if (!booking)
+      return res.status(204).json({
+        success: true,
+        message: `Cabin with the id-${cabinId} does not exist.`,
+      });
+
+    // if booking exists, update the values
+    if (status) booking.status = status;
+    if (checkInDate) booking.checkInDate = checkInDate;
+    if (checkOutDate) booking.checkOutDate = checkOutDate;
+    if (bookingCost) booking.bookingCost = bookingCost;
+    if (numGuests) booking.numGuests = numGuests;
+    if (extraCosts) booking.extraCosts = extraCosts;
+    if (hasPaid) booking.hasPaid = hasPaid;
+
+    await booking.save();
+    return res.status(200).json({
+      success: true,
+      message: `Cabin with id-${bookingId} updated successfully`,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `${error.message}`,
+    });
+  }
+}
 
 module.exports = {
   createBooking,

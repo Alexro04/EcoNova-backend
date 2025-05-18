@@ -5,9 +5,14 @@ const BookingScheme = new mongoose.Schema(
     checkInDate: { type: Date, required: true },
     checkOutDate: { type: Date, required: true },
     bookingCost: { type: Number, required: true },
-    status: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ["unconfirmed", "checked-in", "checked-out"],
+      required: true,
+    },
     extraCosts: { type: Number },
     numGuests: { type: Number, required: true },
+    hasPaid: { type: Boolean, required: true },
     guestId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",
