@@ -6,14 +6,15 @@ async function createBooking(req, res) {
     checkOutDate,
     numGuests,
     bookingCost,
-    extraCost,
+    extraCost = 0,
     guestId,
     cabinId,
     status,
+    hasPaid,
   } = req.body;
 
   try {
-    const newBooking = Booking.create({
+    const newBooking = await Booking.create({
       checkInDate,
       checkOutDate,
       numGuests,
@@ -22,6 +23,7 @@ async function createBooking(req, res) {
       guestId,
       cabinId,
       status,
+      hasPaid,
     });
 
     if (newBooking)
@@ -46,8 +48,9 @@ async function getBookings(req, res) {
 
   //pagination
   const page = req.query.page || 1;
-  const limit = req.query.limit || 1;
+  const limit = req.query.limit || 10;
   const skip = (page - 1) * limit;
+  const count = await Booking.countDocuments(status ? { status } : {});
 
   try {
     const bookings = await Booking.find(status ? { status } : {})
@@ -65,7 +68,7 @@ async function getBookings(req, res) {
         success: true,
         message: "All bookings retrived successfully",
         data: bookings,
-        count: bookings.length,
+        count,
       });
     else
       return res.status(204).json({
@@ -81,7 +84,9 @@ async function getBookings(req, res) {
 async function getBooking(req, res) {
   try {
     const { bookingId } = req.params;
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId)
+      .populate({ path: "guestId", select: "fullname email" })
+      .populate({ path: "cabinId", select: "name" });
     if (booking)
       return res.status(200).json({
         success: true,
@@ -111,7 +116,7 @@ async function deleteBooking(req, res) {
     else
       return res.status(400).json({
         success: false,
-        message: "No ",
+        message: "No booking with that Id was found in the database.",
       });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -126,7 +131,7 @@ async function updateBooking(req, res) {
       checkOutDate,
       numGuests,
       bookingCost,
-      extraCosts,
+      extraCost,
       status,
       hasPaid,
     } = req.body;
@@ -145,13 +150,14 @@ async function updateBooking(req, res) {
     if (checkOutDate) booking.checkOutDate = checkOutDate;
     if (bookingCost) booking.bookingCost = bookingCost;
     if (numGuests) booking.numGuests = numGuests;
-    if (extraCosts) booking.extraCosts = extraCosts;
+    if (extraCost) booking.extraCost = extraCost;
     if (hasPaid) booking.hasPaid = hasPaid;
 
     await booking.save();
     return res.status(200).json({
       success: true,
       message: `Cabin with id-${bookingId} updated successfully`,
+      data: booking,
     });
   } catch (error) {
     res.status(500).json({

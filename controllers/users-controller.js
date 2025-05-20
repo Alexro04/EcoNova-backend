@@ -4,7 +4,8 @@ const User = require("../models/User");
 
 async function registerUser(req, res, next) {
   try {
-    const { fullname, email, password, nationality, phoneNumber } = req.body;
+    const { fullname, email, password, nationality, phoneNumber, nationalId } =
+      req.body;
 
     //encrypt password
     const salt = await bcrypt.genSalt(10);
@@ -14,9 +15,10 @@ async function registerUser(req, res, next) {
     const newUser = await User.create({
       fullname,
       email,
-      role: "guest",
+      role: "user",
       nationality,
       phoneNumber,
+      nationalId,
       password: hasedPassword,
     });
 
@@ -77,9 +79,38 @@ async function loginUser(req, res) {
   }
 }
 
+async function createGuest(req, res) {
+  try {
+    const { fullname, email, nationality, phoneNumber, nationalId } = req.body;
+
+    //create new guest user - a guest user is one that comes to the hotel manually, and the employee has to book the room for them on spot
+    const newUser = await User.create({
+      fullname,
+      email,
+      role: "guest",
+      nationality,
+      phoneNumber,
+      nationalId,
+    });
+
+    //return response
+    if (newUser)
+      return res
+        .status(201)
+        .json({ success: true, message: "User registered successfully" });
+    else throw new Error("Error registering user");
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: `${error.message}-An error occured at the backend`,
+    });
+  }
+}
+
 async function getAllUsers(req, res) {
   const users = await User.find();
   return res.status(200).json({ data: users });
 }
 
-module.exports = { registerUser, loginUser, getAllUsers };
+module.exports = { registerUser, loginUser, getAllUsers, createGuest };

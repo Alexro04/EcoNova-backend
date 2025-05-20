@@ -10,7 +10,7 @@ const BookingScheme = new mongoose.Schema(
       enum: ["unconfirmed", "checked-in", "checked-out"],
       required: true,
     },
-    extraCosts: { type: Number },
+    extraCost: { type: Number },
     numGuests: { type: Number, required: true },
     hasPaid: { type: Boolean, required: true },
     guestId: {
