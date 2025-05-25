@@ -4,7 +4,7 @@ const connectToDatabase = require("./db/db");
 const cors = require("cors");
 
 const cabinRoutes = require("./routes/cabins-routes");
-const userRoutes = require("./routes/users-routes");
+const authRoutes = require("./routes/auth-routes");
 const bookingRoutes = require("./routes/booking-routes");
 const settingsRoutes = require("./routes/settings-routes");
 
@@ -24,7 +24,7 @@ app.use(express.json());
 
 // routes
 app.use("/econova/api/cabins/", cabinRoutes);
-app.use("/econova/api/users/", userRoutes);
+app.use("/econova/api/auth/", authRoutes);
 app.use("/econova/api/bookings/", bookingRoutes);
 app.use("/econova/api/settings/", settingsRoutes);
 

@@ -9,6 +9,11 @@ const UserSchema = new mongoose.Schema(
       enum: ["guest", "user", "admin", "super-admin"],
       required: true,
     },
+    status: {
+      type: String,
+      enum: ["awaiting verification", "verified"],
+      required: () => this.role === "guest",
+    },
     nationality: { type: String, required: true },
     nationalId: { type: String, required: true },
     phoneNumber: { type: Number, required: true },
