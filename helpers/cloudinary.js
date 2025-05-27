@@ -58,6 +58,8 @@ async function deleteImagesFromCloudinary(imageArray) {
 }
 
 module.exports = {
+  uploadToCollection,
+  deleteFromCloudinary,
   addImagesToCloudinary,
   deleteImagesFromCloudinary,
   duplicateImageInCloudinary,

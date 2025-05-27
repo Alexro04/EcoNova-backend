@@ -3,6 +3,12 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const nodemailer = require("nodemailer");
 
+const getEmailTemplate = require("../helpers/emailTemplate");
+const {
+  deleteFromCloudinary,
+  uploadToCollection,
+} = require("../helpers/cloudinary");
+
 const transporter = nodemailer.createTransport({
   service: "Gmail",
   auth: {
@@ -11,40 +17,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-function getEmailTemplate(link) {
-  return `
-  <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;">
-    <div style="max-width: 600px; margin: auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-      <h2 style="color: #2c3e50;">Welcome to EcoNova Hotel Management System</h2>
-      
-      <p style="color: #333333; font-size: 16px;">
-        You have been added as an <strong>admin user</strong> to the EcoNova Hotel Management System.
-      </p>
-      
-      <p style="color: #333333; font-size: 16px;">
-        Use the link below to verify your account:
-      </p>
-      
-      <a href="${link}" style="display: inline-block; margin: 20px 0; padding: 12px 20px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px;">Verify Your Account</a>
-      
-      <p style="color: #333333; font-size: 16px;">
-        Your default password is: <strong>adminuser</strong>
-      </p>
-      
-      <p style="color: #333333; font-size: 16px;">
-        Please log in immediately after verification to change your default password to something more secure.
-      </p>
-      
-      <p style="color: #999999; font-size: 14px; margin-top: 30px;">
-        If the button above doesn't work, copy and paste this link into your browser:<br>
-        <span style="word-break: break-all;">${link}</span>
-      </p>
-    </div>
-  </body>
-`;
-}
-
-async function registerUser(req, res, next) {
+async function registerUser(req, res) {
   try {
     const {
       fullname,
@@ -72,7 +45,6 @@ async function registerUser(req, res, next) {
       password: hasedPassword,
     });
 
-    //return response
     if (newUser) {
       //create a token for email confirmation (verification)
       const token = jwt.sign(
@@ -82,7 +54,7 @@ async function registerUser(req, res, next) {
       );
 
       // send the token to the email of the new admin user
-      const url = `http://localhost:3000/verify-email/${token}`;
+      const url = `http://localhost:3000/econova/api/auth/verify-email/${token}`;
       await transporter.sendMail({
         to: newUser.email,
         subject: "Verify Your Email",
@@ -92,7 +64,6 @@ async function registerUser(req, res, next) {
         .status(201)
         .json({ success: true, message: "User registered successfully" });
     } else throw new Error("Error registering user");
-    next();
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -123,6 +94,7 @@ async function loginUser(req, res) {
     //if it matches, create an access token
     const accessToken = jwt.sign(
       {
+        id: user._id,
         fullname: user.fullname,
         email,
         role: user.role,
@@ -133,24 +105,107 @@ async function loginUser(req, res) {
       { expiresIn: 43200 }
     );
 
-    // get decoded info for immdeiate login
-    const decodedInfo = jwt.verify(accessToken, process.env.JWT_SECRET_KEY);
+    const user_data = {
+      id: user._id,
+      fullname: user.fullname,
+      email: user.email,
+      nationality: user.nationality,
+      phoneNumber: user.phoneNumber,
+      avatar: user.avatar.url,
+      role: user.role,
+    };
 
     return res.status(200).json({
       success: true,
       message: "User logged in successfully",
       access_token: accessToken,
-      user_data: decodedInfo,
+      user_data,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
 
+async function updateUserPassword(req, res) {
+  const { userId } = req.params;
+  const { oldPassword, password } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user)
+    return res.status(400).json({
+      success: false,
+      message: "User with this email is not registered",
+    });
+
+  // if user exist, verify password
+  const match = await bcrypt.compare(oldPassword, user.password);
+  if (!match)
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid password" });
+
+  //hash new password and store in database
+  const salt = await bcrypt.genSalt(10);
+  const newHasedPassword = await bcrypt.hash(password, salt);
+
+  user.password = newHasedPassword;
+  console.log(newHasedPassword, "hash");
+
+  await user.save();
+  return res
+    .status(200)
+    .json({ success: true, message: "Password updated successfully" });
+}
+
+async function updateUserData(req, res) {
+  const { userId } = req.params;
+  const { fullname, phoneNumber } = req.body;
+  console.log(req.body);
+
+  const user = await User.findById(userId);
+  if (!user)
+    return res.status(400).json({
+      success: false,
+      message: "User with this email is not registered",
+    });
+
+  if (fullname) user.fullname = fullname;
+  if (phoneNumber) user.phoneNumber = phoneNumber;
+
+  if (req.file) {
+    //delete current avatar from cloudinary if it exists
+    console.log(req.file);
+    if (user.avatar?.publicId)
+      await deleteFromCloudinary(user.avatar?.publicId);
+    // upload new avatar to cloudinary and update database
+    const result = await uploadToCollection(req.file.path, "User_Avatars");
+    user.avatar = { publicId: result.public_id, url: result.secure_url };
+  }
+  await user.save();
+
+  return res
+    .status(201)
+    .json({ success: true, message: "User's data updated successfully" });
+}
+
 async function getUser(req, res) {
-  if (req.userInfo)
-    return res.status(200).json({ success: true, user_data: req.userInfo });
-  else return res.status(500).json({ success: false, message: error.message });
+  const { id } = req.userInfo;
+  try {
+    const { fullname, email, role, nationality, phoneNumber, avatar } =
+      await User.findById(id);
+    const user_data = {
+      id,
+      fullname,
+      email,
+      role,
+      nationality,
+      phoneNumber,
+      avatar: avatar.url,
+    };
+    return res.status(200).json({ success: true, user_data });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
 }
 
 async function createGuest(req, res) {
@@ -181,14 +236,22 @@ async function createGuest(req, res) {
   }
 }
 
-async function getAllUsers(req, res) {
-  const users = await User.find();
-  return res.status(200).json({ data: users });
+async function getUsers(req, res) {
+  try {
+    const role = req.params.role;
+    const users = await User.find(role ? { role } : {});
+    return res.status(200).json({ data: users });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: `An error occured at the backend-${error.message}`,
+    });
+  }
 }
 
 async function verifyEmail(req, res) {
   try {
-    const decoded = jwt.verify(req.params.token, process.env.EMAIL_SECRET);
+    const decoded = jwt.verify(req.params.token, process.env.JWT_EMAIL_SECRET);
     const user = await User.findById(decoded.id);
 
     if (!user) return res.status(400).json("Invalid link");
@@ -198,6 +261,7 @@ async function verifyEmail(req, res) {
 
     res.send("Email verified successfully!");
   } catch (err) {
+    console.log(err);
     res.status(400).send("Invalid or expired token");
   }
 }
@@ -205,8 +269,10 @@ async function verifyEmail(req, res) {
 module.exports = {
   registerUser,
   loginUser,
-  getAllUsers,
+  getUsers,
   createGuest,
   getUser,
   verifyEmail,
+  updateUserPassword,
+  updateUserData,
 };

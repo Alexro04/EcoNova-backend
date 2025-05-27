@@ -18,6 +18,7 @@ const UserSchema = new mongoose.Schema(
     nationalId: { type: String, required: true },
     phoneNumber: { type: Number, required: true },
     password: { type: String, required: () => this.role === "guest" },
+    avatar: { type: Object },
   },
   { timestamps: true }
 );
