@@ -88,8 +88,8 @@ async function getBookingsBetweenDates(req, res) {
     {
       $match: {
         createdAt: {
-          $gte: afterDate,
-          $lt: beforeDate,
+          $gte: new Date(afterDate),
+          $lt: new Date(beforeDate),
         },
       },
     },
@@ -115,8 +115,8 @@ async function getStaysBetweenDates(req, res) {
     {
       $match: {
         checkInDate: {
-          $gte: afterDate,
-          $lt: beforeDate,
+          $gte: new Date(afterDate),
+          $lt: new Date(beforeDate),
         },
       },
     },
