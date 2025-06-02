@@ -212,6 +212,15 @@ async function createGuest(req, res) {
   try {
     const { fullname, email, nationality, phoneNumber, nationalId } = req.body;
 
+    const existingUser = await User.findOne({ nationalId, email });
+    console.log(existingUser);
+    if (existingUser)
+      return res.status(201).json({
+        success: true,
+        message: "Found Existing user with same nationalId",
+        guestId: existingUser._id,
+      });
+
     //create new guest user - a guest user is one that comes to the hotel manually, and the employee has to book the room for them on spot
     const newUser = await User.create({
       fullname,
@@ -224,9 +233,11 @@ async function createGuest(req, res) {
 
     //return response
     if (newUser)
-      return res
-        .status(201)
-        .json({ success: true, message: "User registered successfully" });
+      return res.status(201).json({
+        success: true,
+        message: "User registered successfully",
+        guestId: newUser._id,
+      });
     else throw new Error("Error registering user");
   } catch (error) {
     return res.status(500).json({

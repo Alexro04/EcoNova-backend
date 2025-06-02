@@ -81,6 +81,59 @@ async function getBookings(req, res) {
   }
 }
 
+async function getBookingsBetweenDates(req, res) {
+  const { beforeDate, afterDate } = req.query;
+
+  const bookings = await Booking.aggregate([
+    {
+      $match: {
+        createdAt: {
+          $gte: afterDate,
+          $lt: beforeDate,
+        },
+      },
+    },
+  ]);
+
+  if (bookings)
+    return res.status(200).json({
+      success: true,
+      message: "Booking retrived successfully",
+      data: bookings,
+    });
+  else
+    return res.status(204).json({
+      success: true,
+      message: "No booking with that Id was found in the database.",
+    });
+}
+
+async function getStaysBetweenDates(req, res) {
+  const { beforeDate, afterDate } = req.query;
+
+  const bookings = await Booking.aggregate([
+    {
+      $match: {
+        checkInDate: {
+          $gte: afterDate,
+          $lt: beforeDate,
+        },
+      },
+    },
+  ]);
+  if (bookings)
+    return res.status(200).json({
+      success: true,
+      message: "Booking retrived successfully",
+      data: bookings,
+    });
+  else
+    return res.status(204).json({
+      success: true,
+      message: "No booking with that Id was found in the database.",
+    });
+}
+
 async function getBooking(req, res) {
   try {
     const { bookingId } = req.params;
@@ -171,6 +224,8 @@ module.exports = {
   createBooking,
   getBookings,
   getBooking,
+  getBookingsBetweenDates,
+  getStaysBetweenDates,
   deleteBooking,
   updateBooking,
 };
