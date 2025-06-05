@@ -12,7 +12,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://econova.vercel.app",
+    origin: "https://econova.vercel.app",
   })
 );
 
