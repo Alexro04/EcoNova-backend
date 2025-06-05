@@ -23,10 +23,10 @@ connectToDatabase();
 app.use(express.json());
 
 // routes
-app.use("/econova/api/cabins/", cabinRoutes);
-app.use("/econova/api/auth/", authRoutes);
-app.use("/econova/api/bookings/", bookingRoutes);
-app.use("/econova/api/settings/", settingsRoutes);
+app.use("/api/cabins/", cabinRoutes);
+app.use("/api/auth/", authRoutes);
+app.use("/api/bookings/", bookingRoutes);
+app.use("/api/settings/", settingsRoutes);
 
 PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
