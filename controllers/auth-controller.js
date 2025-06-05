@@ -79,7 +79,7 @@ async function loginUser(req, res) {
     //check the database for existing user
     const user = await User.findOne({ email });
     if (!user)
-      return res.status(400).json({
+      return res.status(204).json({
         success: false,
         message: "User with this email is not registered",
       });
@@ -129,63 +129,67 @@ async function loginUser(req, res) {
 async function updateUserPassword(req, res) {
   const { userId } = req.params;
   const { oldPassword, password } = req.body;
+  try {
+    const user = await User.findById(userId);
+    if (!user)
+      return res.status(204).json({
+        success: false,
+        message: "User with this email is not registered",
+      });
 
-  const user = await User.findById(userId);
-  if (!user)
-    return res.status(400).json({
-      success: false,
-      message: "User with this email is not registered",
-    });
+    // if user exist, verify password
+    const match = await bcrypt.compare(oldPassword, user.password);
+    if (!match)
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid password" });
 
-  // if user exist, verify password
-  const match = await bcrypt.compare(oldPassword, user.password);
-  if (!match)
+    //hash new password and store in database
+    const salt = await bcrypt.genSalt(10);
+    const newHasedPassword = await bcrypt.hash(password, salt);
+
+    user.password = newHasedPassword;
+
+    await user.save();
     return res
-      .status(400)
-      .json({ success: false, message: "Invalid password" });
-
-  //hash new password and store in database
-  const salt = await bcrypt.genSalt(10);
-  const newHasedPassword = await bcrypt.hash(password, salt);
-
-  user.password = newHasedPassword;
-  console.log(newHasedPassword, "hash");
-
-  await user.save();
-  return res
-    .status(200)
-    .json({ success: true, message: "Password updated successfully" });
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
 }
 
 async function updateUserData(req, res) {
   const { userId } = req.params;
   const { fullname, phoneNumber } = req.body;
-  console.log(req.body);
+  try {
+    const user = await User.findById(userId);
+    if (!user)
+      return res.status(204).json({
+        success: false,
+        message: "User with this email is not registered",
+      });
 
-  const user = await User.findById(userId);
-  if (!user)
-    return res.status(400).json({
-      success: false,
-      message: "User with this email is not registered",
-    });
+    if (fullname) user.fullname = fullname;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
 
-  if (fullname) user.fullname = fullname;
-  if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (req.file) {
+      //delete current avatar from cloudinary if it exists
+      console.log(req.file);
+      if (user.avatar?.publicId)
+        await deleteFromCloudinary(user.avatar?.publicId);
+      // upload new avatar to cloudinary and update database
+      const result = await uploadToCollection(req.file.path, "User_Avatars");
+      user.avatar = { publicId: result.public_id, url: result.secure_url };
+    }
+    await user.save();
 
-  if (req.file) {
-    //delete current avatar from cloudinary if it exists
-    console.log(req.file);
-    if (user.avatar?.publicId)
-      await deleteFromCloudinary(user.avatar?.publicId);
-    // upload new avatar to cloudinary and update database
-    const result = await uploadToCollection(req.file.path, "User_Avatars");
-    user.avatar = { publicId: result.public_id, url: result.secure_url };
+    return res
+      .status(201)
+      .json({ success: true, message: "User's data updated successfully" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
-  await user.save();
-
-  return res
-    .status(201)
-    .json({ success: true, message: "User's data updated successfully" });
 }
 
 async function getUser(req, res) {
@@ -273,7 +277,7 @@ async function verifyEmail(req, res) {
     res.send("Email verified successfully!");
   } catch (err) {
     console.log(err);
-    res.status(400).send("Invalid or expired token");
+    res.status(401).send("Invalid or expired token");
   }
 }
 

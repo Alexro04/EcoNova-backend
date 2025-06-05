@@ -1,4 +1,5 @@
 const cloudinary = require("cloudinary").v2;
+const fs = require("fs");
 
 // Configure your Cloudinary credentials
 cloudinary.config({
@@ -13,6 +14,8 @@ async function uploadToCollection(imagePath, collectionName) {
     const result = await cloudinary.uploader.upload(imagePath, {
       folder: collectionName,
     });
+    // delete from local storage
+    fs.unlinkSync(imagePath);
     return result;
   } catch (error) {
     console.error("Upload failed:", error);

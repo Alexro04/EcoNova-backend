@@ -5,7 +5,7 @@ function authMiddleware(req, res, next) {
     // extract the token from the header
     const token = req.headers["authorization"]?.split(" ")[1];
     if (!token)
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Access denied. Pass a valid token.",
       });
@@ -13,7 +13,7 @@ function authMiddleware(req, res, next) {
     //decode the token
     const decodedInfo = jwt.verify(token, process.env.JWT_SECRET_KEY);
     if (!decodedInfo)
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Error while verifying token",
       });
@@ -21,7 +21,7 @@ function authMiddleware(req, res, next) {
     req.userInfo = decodedInfo;
     next();
   } catch (error) {
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });

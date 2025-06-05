@@ -108,6 +108,53 @@ async function getBookingsBetweenDates(req, res) {
     });
 }
 
+async function getTodayActivities(req, res) {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+
+  try {
+    const bookings = await Booking.find({
+      $or: [
+        {
+          $and: [
+            { status: "unconfirmed" },
+            { checkInDate: { $gte: startOfToday, $lt: endOfToday } },
+          ],
+        },
+        {
+          $and: [
+            { status: "checked-in" },
+            { checkOutDate: { $gte: startOfToday, $lt: endOfToday } },
+          ],
+        },
+      ],
+    }).populate({
+      path: "guestId",
+      select: "fullname nationality",
+    });
+
+    if (bookings)
+      return res.status(200).json({
+        success: true,
+        message: "Booking retrived successfully",
+        data: bookings,
+      });
+    else
+      return res.status(204).json({
+        success: true,
+        message: "No booking with that Id was found in the database.",
+      });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
 async function getStaysBetweenDates(req, res) {
   const { beforeDate, afterDate } = req.query;
 
@@ -138,7 +185,10 @@ async function getBooking(req, res) {
   try {
     const { bookingId } = req.params;
     const booking = await Booking.findById(bookingId)
-      .populate({ path: "guestId", select: "fullname email" })
+      .populate({
+        path: "guestId",
+        select: "fullname email nationality nationalId",
+      })
       .populate({ path: "cabinId", select: "name" });
     if (booking)
       return res.status(200).json({
@@ -226,6 +276,7 @@ module.exports = {
   getBooking,
   getBookingsBetweenDates,
   getStaysBetweenDates,
+  getTodayActivities,
   deleteBooking,
   updateBooking,
 };
