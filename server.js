@@ -10,14 +10,21 @@ const settingsRoutes = require("./routes/settings-routes");
 
 const app = express();
 
-const allowedOrigins = [
-  "https://econova.vercel.app/",
-  "https://econova-oluwatomis-projects.vercel.app/",
-];
-
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      console.log("Incoming request origin:", origin);
+      const allowedOrigins = [
+        "https://econova.vercel.app/",
+        "https://econova-oluwatomis-projects.vercel.app/",
+      ];
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
   })
 );
 
