@@ -13,10 +13,11 @@ const app = express();
 app.use(
   cors({
     origin: function (origin, callback) {
-      console.log("Incoming request origin:", origin);
       const allowedOrigins = [
-        "https://econova.vercel.app/",
-        "https://econova-oluwatomis-projects.vercel.app/",
+        "https://lexeconova.netlify.app",
+        "https://6842de2b64d14abc58f44cd2--lexeconova.netlify.app/login",
+        "https://econova.vercel.app",
+        "https://econova-oluwatomis-projects.vercel.app",
       ];
 
       if (!origin || allowedOrigins.includes(origin)) {
